@@ -1,19 +1,15 @@
 const cheerio = require('cheerio');
 const express = require('express');
 const nunjucks = require('nunjucks');
-const cacheControl = require('express-cache-controller');
+const NodeCache = require( "node-cache" );
 const app = express();
 const port = process.env.PORT || 3000;
+const myCache = new NodeCache();
 
 nunjucks.configure('views', {
   autoescape: true,
   express: app
 });
-
-// Add cache control middleware
-app.use(cacheControl({
-  maxAge: 3600 // 1 hour in seconds
-}));
 
 const CSV_URL = 'https://datasette.planning.data.gov.uk/performance.csv?sql=select%0D%0A++organisation%2C%0D%0A++organisation_name%2C%0D%0A++count_issue_error_external+as+%22number_of_errors%22%0D%0Afrom%0D%0A++provision_summary%0D%0Awhere%0D%0A++%22count_issue_error_external%22+%3E+0%0D%0A++and+%22organisation%22+in+%28%0D%0A++++%22local-authority%3ALBH%22%2C%0D%0A++++%22local-authority%3ABUC%22%2C%0D%0A++++%22local-authority%3ASWK%22%2C%0D%0A++++%22local-authority%3ACMD%22%2C%0D%0A++++%22local-authority%3ANBL%22%2C%0D%0A++++%22local-authority%3ANED%22%2C%0D%0A++++%22local-authority%3ACMD%22%2C%0D%0A++++%22local-authority%3ADAC%22%2C%0D%0A++++%22local-authority%3ADNC%22%2C%0D%0A++++%22local-authority%3AGLO%22%2C%0D%0A++++%22local-authority%3ACAT%22%2C%0D%0A++++%22local-authority%3AMDW%22%2C%0D%0A++++%22local-authority%3ANET%22%2C%0D%0A++++%22local-authority%3ABIR%22%2C%0D%0A++++%22local-authority%3ACAT%22%2C%0D%0A++++%22local-authority%3AEPS%22%2C%0D%0A++++%22local-authority%3ABNE%22%2C%0D%0A++++%22local-authority%3AGRY%22%2C%0D%0A++++%22local-authority%3AGAT%22%2C%0D%0A++++%22local-authority%3AKTT%22%2C%0D%0A++++%22local-authority%3ATEW%22%2C%0D%0A++++%22local-authority%3AWBK%22%2C%0D%0A++++%22local-authority%3ASAL%22%2C%0D%0A++++%22local-authority%3ADST%22%2C%0D%0A++++%22local-authority%3ADOV%22%2C%0D%0A++++%22local-authority%3ALIV%22%2C%0D%0A++++%22local-authority%3ARED%22%2C%0D%0A++++%22local-authority%3AWFT%22%2C%0D%0A++++%22local-authority%3ANLN%22%2C%0D%0A++++%22local-authority%3ANSM%22%2C%0D%0A++++%22local-authority%3ASLF%22%2C%0D%0A++++%22local-authority%3AWRL%22%2C%0D%0A++++%22local-authority%3AASF%22%2C%0D%0A++++%22local-authority%3ABAI%22%2C%0D%0A++++%22local-authority%3ABOL%22%2C%0D%0A++++%22local-authority%3AEHE%22%2C%0D%0A++++%22local-authority%3ABDG%22%2C%0D%0A++++%22local-authority%3AMIK%22%2C%0D%0A++++%22local-authority%3ARCH%22%2C%0D%0A++++%22local-authority%3ASST%22%2C%0D%0A++++%22local-authority%3ATRF%22%2C%0D%0A++++%22local-authority%3AWSM%22%2C%0D%0A++++%22local-authority%3AEHE%22%2C%0D%0A++++%22local-authority%3AHOR%22%2C%0D%0A++++%22local-authority%3ALCE%22%2C%0D%0A++++%22local-authority%3ABDG%22%2C%0D%0A++++%22local-authority%3ACRY%22%2C%0D%0A++++%22local-authority%3AENF%22%2C%0D%0A++++%22local-authority%3AHRY%22%2C%0D%0A++++%22local-authority%3AHNS%22%2C%0D%0A++++%22local-authority%3ATWH%22%2C%0D%0A++++%22local-authority%3AMIK%22%2C%0D%0A++++%22local-authority%3ANEW%22%2C%0D%0A++++%22national-park-authority%3AQ72617158%22%2C%0D%0A++++%22local-authority%3ANYUA%22%2C%0D%0A++++%22local-authority%3ANBL%22%2C%0D%0A++++%22local-authority%3APTE%22%2C%0D%0A++++%22local-authority%3APLY%22%2C%0D%0A++++%22local-authority%3ARCH%22%2C%0D%0A++++%22local-authority%3AROS%22%2C%0D%0A++++%22local-authority%3AROH%22%2C%0D%0A++++%22local-authority%3AKEC%22%2C%0D%0A++++%22local-authority%3ASAW%22%2C%0D%0A++++%22local-authority%3ASCA%22%2C%0D%0A++++%22local-authority%3ASGC%22%2C%0D%0A++++%22local-authority%3ASST%22%2C%0D%0A++++%22local-authority%3ASPE%22%2C%0D%0A++++%22local-authority%3ASUR%22%2C%0D%0A++++%22local-authority%3ATAN%22%2C%0D%0A++++%22local-authority%3ATEN%22%2C%0D%0A++++%22local-authority%3ATOB%22%2C%0D%0A++++%22local-authority%3ATRF%22%2C%0D%0A++++%22local-authority%3AWAE%22%2C%0D%0A++++%22local-authority%3AWSM%22%2C%0D%0A++++%22local-authority%3ASNO%22%2C%0D%0A++++%22local-authority%3ABRO%22%2C%0D%0A++++%22local-authority%3ABST%22%2C%0D%0A++++%22local-authority%3ACAS%22%2C%0D%0A++++%22local-authority%3ACBF%22%2C%0D%0A++++%22local-authority%3ALND%22%2C%0D%0A++++%22local-authority%3AYOR%22%2C%0D%0A++++%22local-authority%3AECA%22%2C%0D%0A++++%22local-authority%3AEHA%22%0D%0A++%29%0D%0A++and+dataset+in+%28%0D%0A++++%27article-4-direction%27%2C%0D%0A++++%27article-4-direction-area%27%2C%0D%0A++++%27conservation-area%27%2C%0D%0A++++%27conservation-area-document%27%2C%0D%0A++++%27tree-preservation-order%27%2C%0D%0A++++%27tree-preservation-zone%27%2C%0D%0A++++%27tree%27%2C%0D%0A++++%27listed-building%27%2C%0D%0A++++%27listed-building-outline%27%0D%0A++%29%0D%0Agroup+by%0D%0A++organisation%0D%0Aorder+by+organisation_name&p0=&_size=max';
 
@@ -89,9 +85,21 @@ async function fetchOrganisationData (csvUrl) {
   }
 }
 
+async function getOrganisationSummary() {
+  let summary = myCache.get("summary");
+  if (summary == undefined) {
+    const orgSummary = await fetchOrganisationData(CSV_URL)
+    myCache.set("summary", orgSummary, 60 * 60);
+
+    return orgSummary;
+  }
+
+  return summary;
+}
+
 app.get('/', async (req, res) => {
   try {
-    const summary = await fetchOrganisationData(CSV_URL);
+    const summary = await getOrganisationSummary();
     res.render('index.html', { summary });
   } catch (err) {
     res.status(500).send('Error fetching organisation data');
@@ -100,7 +108,7 @@ app.get('/', async (req, res) => {
 
 app.get('/api', async (req, res) => {
   try {
-    const summary = await fetchOrganisationData(CSV_URL);
+    const summary = await getOrganisationSummary();
     res.json(summary);
   } catch (err) {
     res.status(500).send('Error fetching organisation data');
