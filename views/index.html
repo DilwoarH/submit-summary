@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Organisation Summary</title>
+</head>
+<body>
+  <h1>Organisation Summary</h1>
+  <ul>
+    {% for item in summary %}
+      <li><a href="https://submit.planning.data.gov.uk/organisations/{{ item.organisation }}" target="_blank">{{ item.organisationName }}</a></li>
+      <ul>
+        {% for orgSummaryItem in item.summary %}
+          <li>{{ orgSummaryItem }}</li>
+        {% endfor %}
+      </ul>
+    {% endfor %}
+  </ul>
+</body>
+</html>
